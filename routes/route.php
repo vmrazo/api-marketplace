@@ -25,7 +25,14 @@ if (count($routesArray) == 0){
 
             $response = new GetController();
             $response-> getFilterData(explode("?", $routesArray[1])[0], $_GET["linkTo"], $_GET["equalTo"]);
-        }else{
+            //Peticiones GET entre tablas relacionadas sin filtro
+        }else if(isset($_GET["rel"]) && isset($_GET["type"])&&explode("?", $routesArray[1])[0] == "relations"){
+
+            $response = new GetController();
+            $response-> getRelData($_GET["rel"], $_GET["type"]);
+        }
+
+        else{
             //Peticiones GET sin filtro
             $response = new GetController();
             $response->getData($routesArray[1]);
