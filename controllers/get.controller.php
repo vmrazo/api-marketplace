@@ -30,6 +30,16 @@ class GetController{
         $return-> fncResponse($response,"getRelData");
     }
 
+    //Peticiones GET entre tablas relacionadas con filtro
+    public function getRelFilterData($rel,$type,$linkTo,$equalTo){
+        $response = GetModel::getRelFilterData($rel,$type,$linkTo,$equalTo);
+
+
+
+        $return = new GetController();
+        $return-> fncResponse($response,"getRelFilterData");
+    }
+
         //respuesta del controlador
     public function fncResponse($response, $method){
         if (!empty($response)){
