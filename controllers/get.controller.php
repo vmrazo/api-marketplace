@@ -2,18 +2,18 @@
 class GetController{
     //Peticiones GET sin filtro
 
-    public function getData($table){
+    public function getData($table, $orderBy, $orderMode){
 
-        $response = GetModel::getData($table);
+        $response = GetModel::getData($table,$orderBy,$orderMode);
 
         $return = new GetController();
         $return-> fncResponse($response,"getData");
     }
 
     //Peticiones GET con filtro
-    public function getFilterData($table,$linkTo,$equalTo){
+    public function getFilterData($table,$linkTo,$equalTo,$orderBy, $orderMode){
 
-        $response = GetModel::getFilterData($table,$linkTo,$equalTo);
+        $response = GetModel::getFilterData($table,$linkTo,$equalTo,$orderBy, $orderMode);
 
         $return = new GetController();
         $return-> fncResponse($response,"getFilterData");
@@ -21,8 +21,8 @@ class GetController{
 
 
 //Peticiones GET entre tablas relacionadas sin filtro
-    public function getRelData($rel,$type){
-        $response = GetModel::getRelData($rel,$type);
+    public function getRelData($rel,$type,$orderBy, $orderMode){
+        $response = GetModel::getRelData($rel,$type,$orderBy, $orderMode);
 
 
 
@@ -31,8 +31,8 @@ class GetController{
     }
 
     //Peticiones GET entre tablas relacionadas con filtro
-    public function getRelFilterData($rel,$type,$linkTo,$equalTo){
-        $response = GetModel::getRelFilterData($rel,$type,$linkTo,$equalTo);
+    public function getRelFilterData($rel,$type,$linkTo,$equalTo,$orderBy, $orderMode){
+        $response = GetModel::getRelFilterData($rel,$type,$linkTo,$equalTo,$orderBy, $orderMode);
 
 
 
@@ -40,6 +40,14 @@ class GetController{
         $return-> fncResponse($response,"getRelFilterData");
     }
 
+    //Peticiones GET para el buscador
+    public function getSearchData($table,$linkTo,$search,$orderBy, $orderMode){
+
+        $response = GetModel::getSearchData($table,$linkTo,$search,$orderBy, $orderMode);
+
+        $return = new GetController();
+        $return-> fncResponse($response,"getFilterData");
+    }
         //respuesta del controlador
     public function fncResponse($response, $method){
         if (!empty($response)){
