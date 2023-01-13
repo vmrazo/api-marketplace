@@ -11,7 +11,7 @@ class GetController{
     }
 
     //Peticiones GET con filtro
-    public function getFilterData($table,$linkTo,$equalTo,$orderBy, $orderMode,$startAt,$endAt){
+    static function getFilterData($table,$linkTo,$equalTo,$orderBy, $orderMode,$startAt,$endAt){ //Le tuve que cambiar a static para que la funciones put funcionen
 
         $response = GetModel::getFilterData($table,$linkTo,$equalTo,$orderBy, $orderMode,$startAt,$endAt);
 
