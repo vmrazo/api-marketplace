@@ -42,10 +42,19 @@ class GetController{
     //Peticiones GET para el buscador
     public function getSearchData($table,$linkTo,$search,$orderBy, $orderMode,$startAt,$endAt){
 
+
         $response = GetModel::getSearchData($table,$linkTo,$search,$orderBy, $orderMode,$startAt,$endAt);
 
         $return = new GetController();
         $return-> fncResponse($response,"getSearchData");
+    }
+
+    //Peticiones GET para el buscador entre tablas relacionadas
+    public function getSearchRelData($rel,$type,$linkTo,$search,$orderBy,$orderMode,$startAt,$endAt){
+
+        $response = GetModel::getSearchRelData($rel,$type,$linkTo,$search,$orderBy, $orderMode,$startAt,$endAt);
+        $return = new GetController();
+        $return-> fncResponse($response,"getSearchRelData");
     }
         //respuesta del controlador
     public function fncResponse($response, $method){
@@ -53,12 +62,12 @@ class GetController{
             $json = array(
                 "status" => 200,
                 "total" => count($response),
-                "result" => $response
+                "results" => $response
             );
         }else{
             $json = array(
                 "status" => 404,
-                "result" => "Not found",
+                "results" => "Not found",
                 "method" =>$method
             );
         }

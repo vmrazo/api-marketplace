@@ -24,7 +24,6 @@ class PostModel{
         $columns .= ")";
         $params .= ")";
 
-        echo '<pre>'; print_r($columns); print_r($params); '</pre>';
 
         $stmt = Connection::connect()->prepare("INSERT INTO $table $columns VALUES $params");
 
@@ -35,7 +34,7 @@ class PostModel{
         if ($stmt->execute()){
             return "The process was successful";
         }else{
-            echo Connection::connect()->errorInfo();
+            return Connection::connect()->errorInfo();
         }
     }
 }

@@ -1,5 +1,6 @@
 <?php
 
+
 $routesArray =explode("/",$_SERVER['REQUEST_URI']);
 $routesArray = array_filter($routesArray);
 
@@ -8,7 +9,7 @@ $routesArray = array_filter($routesArray);
 if (count($routesArray) == 0){
     $json = array(
         "status" => 404,
-        "result" => "Not found"
+        "results" => "Not found"
     );
 
     echo json_encode($json, http_response_code($json['status']));
@@ -105,9 +106,13 @@ if (count($routesArray) == 0){
                 $startAt = null;
                 $endAt = null;
             }
-
-            $response = new GetController();
-            $response->getSearchData(explode("?", $routesArray[1])[0], $_GET["linkTo"], $_GET["search"],$orderBy,$orderMode,$startAt,$endAt);
+            if(explode("?", $routesArray[1])[0] == "relations" && isset($_GET["rel"]) && isset($_GET["type"])){
+                $response = new GetController();
+                $response->getSearchRelData( $_GET["rel"], $_GET["type"], $_GET["linkTo"], $_GET["search"],$orderBy,$orderMode,$startAt,$endAt);
+            }else{
+                $response = new GetController();
+                $response->getSearchData(explode("?", $routesArray[1])[0], $_GET["linkTo"], $_GET["search"],$orderBy,$orderMode,$startAt,$endAt);
+            }
         }
         //Peticiones GET sin filtro
         else {
@@ -162,25 +167,65 @@ if (count($routesArray) == 0){
         if (isset($_POST)) {
             //Validamos que las variables POST coincidan con los nombres de las columnas de la base de datos
             $count = 0;
-            foreach($columns as $key => $value){
-               if (array_keys($_POST)[$key] == $value) {
-                    $count++;
-               }else{
-                   $json = array(
-                       "status" => 404,
-                       "result" => "Error: Fields in the form do not match the database"
-                   );
-
-                   echo json_encode($json, http_response_code($json['status']));
-
-                   return;
-               }
+            foreach (array_keys($_POST) as $key => $value){
+                $count = array_search($value, $columns);
             }
 
-            if($count == count($columns)){
-                //Solicitamos respuesta del controlador para crear datos en cualquier tabla
-                $response = new PostController();
-                $response->postData(explode("?", $routesArray[1])[0], $_POST);
+            if ($count > 0){
+                //Solicitamos respuesta del controlador para registrar usuarios
+                if(isset($_GET['register']) && $_GET['register'] == true){
+                    $response = new PostController();
+                    $response->postRegister(explode("?", $routesArray[1])[0], $_POST);
+
+                    //Solicitamos respuesta del controlador para el ingreso de usuarios
+                }elseif(isset($_GET['login']) && $_GET['login'] == true){
+                    $response = new PostController();
+                    $response->postLogin(explode("?", $routesArray[1])[0], $_POST);
+                    //Validamos el token de autenticación
+                }elseif(isset($_GET["token"])){
+
+                    //Traemos a usuario de acuerdo al token
+                    $user = GetModel::getFilterData("users","token_user",$_GET["token"],null,null,null,null);
+
+                   if(!empty($user)){
+                       //validamos que el token no haya expirado
+                       $time = time();
+                       if ($user[0]->token_exp_user > $time){
+                           //Solicitamos respuesta del controlador para crear datos en cualquier tabla
+                           $response = new PostController();
+                           $response->postData(explode("?", $routesArray[1])[0], $_POST);
+                       }else{
+                           $json = array(
+                               'status' => 400,
+                               'results' => 'Error: The token has expired'
+                           );
+                           echo json_encode($json, http_response_code($json["status"]));
+                           return;
+                       }
+                   }else{
+                       $json = array(
+                           'status' => 400,
+                           'results' => 'Error: The user is not authorized'
+                       );
+                       echo json_encode($json, http_response_code($json["status"]));
+                       return;
+                   }
+
+                }else {
+                    $json = array(
+                        'status' => 400,
+                        'results' => 'Error: Authorization Required'
+                    );
+                    echo json_encode($json, http_response_code($json["status"]));
+                    return;
+                }
+            }else{
+                $json = array(
+                    'status' => 400,
+                    'results' => "Error: Fields in the form do not match the database"
+                );
+                echo json_encode($json, http_response_code($json["status"]));
+                return;
             }
         }
     }
@@ -223,14 +268,46 @@ if (count($routesArray) == 0){
 
                 //Validamos que loc campos PUT coincidan con los nombres de columnas de la base de datos
                 $count = 0;
-                foreach (array_keys($data) as $value){
+                foreach (array_keys($data) as $key => $value){
                     $count = array_search($value, $columns);
                 }
                 if ($count > 0){
-                    //Solicitamos respuesta del controlador para editar cualquier tabla
+                    if(isset($_GET["token"])){
+                            //Traemos a usuario de acuerdo al token
+                        $user = GetModel::getFilterData("users","token_user",$_GET["token"],null,null,null,null);
 
-                    $response = new PutController();
-                    $response->putData(explode("?", $routesArray[1])[0],$data, $_GET["id"],$_GET["nameId"]);
+                        if(!empty($user)){
+                            //validamos que el token no haya expirado
+                            $time = time();
+                            if ($user[0]->token_exp_user > $time){
+                                //Solicitamos respuesta del controlador para editar cualquier tabla
+                                $response = new PutController();
+                                $response->putData(explode("?", $routesArray[1])[0],$data, $_GET["id"],$_GET["nameId"]);
+                            }else{
+                                $json = array(
+                                    'status' => 400,
+                                    'results' => 'Error: The token has expired'
+                                );
+                                echo json_encode($json, http_response_code($json["status"]));
+                                return;
+                            }
+                        }else{
+                            $json = array(
+                                'status' => 400,
+                                'results' => 'Error: The user is not authorized'
+                            );
+                            echo json_encode($json, http_response_code($json["status"]));
+                            return;
+                        }
+                    }else {
+                            $json = array(
+                                'status' => 400,
+                                'results' => 'Error: Authorization Required'
+                            );
+                            echo json_encode($json, http_response_code($json["status"]));
+                            return;
+                    }
+
                 }else{
                     $json = array(
                         'status' => 400,
@@ -256,14 +333,66 @@ if (count($routesArray) == 0){
     //Peticiones DELETE
     if (count($routesArray) == 1 && isset($_SERVER["REQUEST_METHOD"]) &&
         $_SERVER["REQUEST_METHOD"] == "DELETE") {
-        $json = array(
-            "status" => 200,
-            "result" => "DELETE"
-        );
 
-        echo json_encode($json, http_response_code($json['status']));
+        //Preguntamos si viene ID
+        if(isset($_GET["id"]) && isset($_GET["nameId"])){
+            //Validamos que exista el ID
+            $table = explode("?", $routesArray[1])[0];
+            $linkTo = $_GET["nameId"];
+            $equalTo = $_GET["id"];
+            $orderBy = null;
+            $orderMode = null;
+            $startAt = null;
+            $endAt = null;
 
-        return;
+
+            $response = PutController::getFilterData($table,$linkTo,$equalTo,$orderBy, $orderMode,$startAt,$endAt);
+            if($response){
+                if(isset($_GET["token"])){
+                    //Traemos a usuario de acuerdo al token
+                    $user = GetModel::getFilterData("users","token_user",$_GET["token"],null,null,null,null);
+
+                    if(!empty($user)){
+                        //validamos que el token no haya expirado
+                        $time = time();
+                        if ($user[0]->token_exp_user > $time) {
+                            //solicitamos respuesta del controlador.
+                            $response = new DeleteController();
+                            $response->deleteData(explode("?", $routesArray[1])[0], $_GET["id"], $_GET["nameId"]);
+                        }else{
+                            $json = array(
+                                'status' => 400,
+                                'results' => 'Error: The token has expired'
+                            );
+                            echo json_encode($json, http_response_code($json["status"]));
+                            return;
+                        }
+                    }else{
+                        $json = array(
+                            'status' => 400,
+                            'results' => 'Error: The user is not authorized'
+                        );
+                        echo json_encode($json, http_response_code($json["status"]));
+                        return;
+                    }
+                }else {
+                    $json = array(
+                        'status' => 400,
+                        'results' => 'Error: Authorization Required'
+                    );
+                    echo json_encode($json, http_response_code($json["status"]));
+                    return;
+                }
+
+            }else{
+                $json = array(
+                    'status' => 400,
+                    'results' => "Error: The Id is not found in the database"
+                );
+                echo json_encode($json, http_response_code($json['status']));
+                return;
+            }
+        }
     }
 }
 
